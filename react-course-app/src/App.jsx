@@ -1,95 +1,71 @@
 import './App.css'
-import { Route, Routes} from "react-router-dom";
-import Navbar from "./components/Navbar.jsx";
-import {useContext, useState} from "react";
-import {AuthContext} from "./context/AuthContext.js";
+import {useState, useEffect} from "react";
 
-function HomePage() {
-  const {user} = useContext(AuthContext)
+function Counter() {
+  const [counter, setCounter] = useState(0)
 
-  return (
-    <div style={{ padding: "0 1.5rem"}}>
-      <h1>Home</h1>
-      {
-        user.isAuth ? (
-          <p>Welcome back, {user.name}!</p>
-        ) : (
-          <p>You are not logged in. Go to the login page to sign in.</p>
-        )
-      }
-    </div>
-  )
+  useEffect(() => {
+    console.log("Counter Mounted");
+
+    return () => {
+      console.log("Counter Unmounted");
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log("Counter Updated")
+  }, [counter])
+
+  return <button onClick={() => setCounter(counter + 1)}>Click me, counter:  {counter}</button>
 }
 
-function ProfilePage() {
-  const {user} = useContext(AuthContext)
+function CleanupExample() {
+  const [x, setX] = useState(0)
 
-  return (
-    <div style={{ padding: "0 1.5rem"}}>
-      <h1>Profile Page</h1>
-      <p>Name: {user.name}</p>
-      <p>Here you could show more user info from the context.</p>
-    </div>
-  )
-}
+  useEffect(() => {
+    function handleMouseMove(event) {
+      setX(event.clientX)
+    }
 
-function LoginPage() {
-  const [name, setName] = useState("");
-  const {user, login} = useContext(AuthContext)
+    window.addEventListener('mousemove', handleMouseMove)
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    login(name);
-  }
+    // cleanup runs on unmount or dependency change
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+    }
+  }, []);
 
-  return (
-    <div style={{ padding: "0 1.5rem"}}>
-      <h1>Login</h1>
-      <form onSubmit={handleSubmit} style={{ marginTop: "1rem"}}>
-        <label>
-          Name:
-          <input type="text"
-                 placeholder={"Enter your name..."}
-                 value={name}
-                 onChange={(e) => setName(e.target.value)}
-                 style={{ marginLeft: "0.5rem"}}
-          />
-        </label>
-        <button type="submit" style={{ marginLeft: "0.5rem"}}>Login</button>
-      </form>
-
-      {user.isAuth && <p>User logged in: Welcome {user.name}</p> }
-    </div>
-  )
+  return <p>Mouse X: {x}</p>
 }
 
 function App() {
-  const [user, setUser] = useState({name: "", isAuth: false})
+  const [showCounter, setShowCounter] = useState(false)
 
-  function login(name) {
-    setUser({name: name, isAuth: true})
-  }
+  useEffect(() => {
+    console.log("App Mounted");
+    async function fetchUsers() {
+      try {
+        const response = await fetch("https://jsonplaceholder.typicode.com/users")
+        const data = await response.json()
+        console.log(data)
+      } catch (error) {
+        console.log(error)
+      }
+    }
 
-  function logout(name) {
-    setUser({name: "", isAuth: false})
-  }
+    fetchUsers();
+  }, [])
 
   return (
     <div>
-      <AuthContext.Provider value={{user, login, logout}}>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="*"
-            element={<h1 style={{ padding: "0 1.5rem"}}>404 Page not found</h1>}
-          />
-        </Routes>
-      </AuthContext.Provider>
-      <footer>Footer</footer>
+      <button onClick={() => setShowCounter(!showCounter)}>
+        Show Counter
+      </button>
+      {
+        showCounter && <Counter />
+      }
+      <br/>
+      <CleanupExample />
     </div>
   )
 }
