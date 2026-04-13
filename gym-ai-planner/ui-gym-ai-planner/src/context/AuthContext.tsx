@@ -1,10 +1,14 @@
 import {createContext, type ReactNode, useContext, useEffect, useState} from "react";
-import type {IUser} from "../types";
+import type {IUser, IUserProfile} from "../types";
 import {authClient} from "../lib/auth.ts";
+import {api} from "../lib/api.ts";
 
 interface AuthContextType {
   user: IUser | null;
   isLoading: boolean;
+  saveProfile: (
+    profile: Omit<IUserProfile, "userId" | "updatedAt">,
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,8 +37,16 @@ export default function AuthProvider({ children } : { children: ReactNode }) {
     loadUser();
   }, []);
 
+  async function saveProfile(profileData: Omit<IUserProfile, "userId" | "updatedAt">) {
+    if (!neonUser) {
+      throw new Error("User not authenticated");
+    }
+
+    api.saveProfile(neonUser.id, profileData);
+  }
+
   return (
-    <AuthContext.Provider value={{ user: neonUser, isLoading }}>
+    <AuthContext.Provider value={{ user: neonUser, isLoading, saveProfile }}>
       {children}
     </AuthContext.Provider>
   )
